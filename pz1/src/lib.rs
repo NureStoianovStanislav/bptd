@@ -13,12 +13,12 @@ pub fn decipher_vigenere(ciphertext: &str, key: &str) -> String {
     shift_vigenere(ciphertext, gen_keystream(key).map(|k| alphabet_size - k))
 }
 
-pub fn extract_key_vigenere(plaintext: &str, ciphertext_part: &str) -> String {
+pub fn extract_key_vigenere(ciphertext: &str, plaintext_part: &str) -> String {
     let alphabet_size = ALPHABET.chars().count();
-    let keystream = gen_keystream(ciphertext_part).map(|k| alphabet_size - k);
-    let repeated_key = shift_vigenere(plaintext, keystream)
+    let keystream = gen_keystream(plaintext_part).map(|k| alphabet_size - k);
+    let repeated_key = shift_vigenere(ciphertext, keystream)
         .chars()
-        .take(ciphertext_part.chars().count())
+        .take(plaintext_part.chars().count())
         .filter(|l| ALPHABET.contains(&l.to_uppercase().to_string()))
         .collect::<String>();
     (1..=repeated_key.chars().count())

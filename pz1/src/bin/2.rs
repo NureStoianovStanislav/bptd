@@ -3,7 +3,7 @@ use pz1::decipher_vigenere;
 // variant 17
 // 17 % 3 == 2
 
-const PLAINTEXT: &str = "Вцмвриґсб клйд, у сиьб ґатсчстизшюх \
+const CIPHERTEXT: &str = "Вцмвриґсб клйд, у сиьб ґатсчстизшюх \
 вьізтинщзтеш ізимсажичясй \
 крхьиоаькериґчяв є яіторач уиплмвовхг \
 тіт, іщ де мцяиятї тдфовчсціч ьжо \
@@ -15,6 +15,6 @@ const PLAINTEXT: &str = "Вцмвриґсб клйд, у сиьб ґатсчст
 const KEY: &str = "аліса";
 
 fn main() {
-    let plaintext = decipher_vigenere(PLAINTEXT, KEY);
+    let plaintext = decipher_vigenere(CIPHERTEXT, KEY);
     println!("{plaintext}");
 }
