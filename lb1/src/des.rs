@@ -2,7 +2,7 @@ use crate::feistel;
 use crate::keys::gen_keys;
 use crate::permutation::*;
 
-const BLOCK_SIZE: usize = core::mem::size_of::<u64>();
+pub const BLOCK_SIZE: usize = core::mem::size_of::<u64>();
 
 #[derive(Debug)]
 pub enum DecryptError {
@@ -11,16 +11,12 @@ pub enum DecryptError {
 }
 
 pub fn encrypt(plaintext: &str, key: u64) -> Vec<u8> {
-    let full_blocks = plaintext.as_bytes().windows(BLOCK_SIZE).step_by(BLOCK_SIZE);
-    let rest_count = plaintext.len() % BLOCK_SIZE;
-    let rest = plaintext
-        .as_bytes()
+    let full_blocks = plaintext.as_bytes().chunks_exact(BLOCK_SIZE);
+    let rest = full_blocks
+        .remainder()
         .iter()
-        .rev()
-        .take(rest_count)
-        .rev()
         .copied()
-        .chain(core::iter::repeat((BLOCK_SIZE - rest_count) as u8))
+        .chain(core::iter::repeat(full_blocks.remainder().len() as u8))
         .take(BLOCK_SIZE)
         .collect::<Vec<_>>();
     full_blocks
@@ -36,8 +32,7 @@ pub fn decrypt(ciphertext: &[u8], key: u64) -> Result<Vec<u8>, DecryptError> {
         return Err(DecryptError::InvalidLength);
     }
     let mut decrypted_bytes = ciphertext
-        .windows(BLOCK_SIZE)
-        .step_by(BLOCK_SIZE)
+        .chunks_exact(BLOCK_SIZE)
         .map(|block| u64::from_be_bytes(block.try_into().unwrap()))
         .map(|block| decrypt_block(block, key))
         .flat_map(u64::to_be_bytes)
