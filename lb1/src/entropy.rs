@@ -1,14 +1,23 @@
+use crate::des;
+
 pub fn calculate_entropy(bytes: &[u8]) -> f64 {
-    let total = bytes
-        .windows(8)
-        .step_by(8)
-        .map(|bytes| {
-            let block = u64::from_be_bytes(bytes.try_into().unwrap());
-            let p = (count_ones(block) as f64) / (u64::BITS as f64);
-            -p * p.log2() - (1. - p) * (1. - p).log2()
+    let total_entropy: f64 = bytes
+        .chunks(des::BLOCK_SIZE)
+        .map(|block| {
+            let block = block
+                .iter()
+                .copied()
+                .chain(core::iter::repeat(0))
+                .take(des::BLOCK_SIZE)
+                .collect::<Vec<_>>();
+            let block = u64::from_be_bytes(block.try_into().unwrap());
+            match (count_ones(block) as f64) / (u64::BITS as f64) {
+                0. | 1. => 0.,
+                p => -p * p.log2() - (1. - p) * (1. - p).log2(),
+            }
         })
-        .sum::<f64>();
-    total / bytes.len() as f64
+        .sum();
+    total_entropy / (bytes.len() as f64 / des::BLOCK_SIZE as f64).ceil()
 }
 
 pub fn count_ones(block: u64) -> u8 {
