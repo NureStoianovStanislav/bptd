@@ -4,8 +4,6 @@ mod feistel;
 mod keys;
 mod permutation;
 
-use entropy::calculate_entropy;
-
 use base64::prelude::*;
 
 fn main() {
@@ -21,31 +19,25 @@ fn main() {
         }
         "encrypt" => {
             let plaintext = args.next().expect("please enter a message to encrypt");
-            let entropy_before = calculate_entropy(plaintext.as_bytes());
             let key = expect_valid_key(args.next());
-            let ciphertext = des::encrypt(&plaintext, key);
-            let entropy_after = calculate_entropy(&ciphertext);
+            let (ciphertext, entropy) = des::encrypt(&plaintext, key);
             let base64_encoded = BASE64_STANDARD.encode(ciphertext);
             println!("encrypted message: {base64_encoded}");
-            println!("entropy before encryption: {entropy_before}");
-            println!("entropy after encryption: {entropy_after}");
+            print_entropy(&entropy);
         }
         "decrypt" => {
             let base64_encoded = args.next().expect("please enter a message to decrypt");
             let ciphertext = BASE64_STANDARD
                 .decode(base64_encoded.as_bytes())
                 .expect("expected ciphertext to be base64 encoded");
-            let entropy_before = calculate_entropy(&ciphertext);
             let key = expect_valid_key(args.next());
-            let plaintext_bytes = match des::decrypt(&ciphertext, key) {
-                Ok(p) => p,
+            let (plaintext_bytes, entropy) = match des::decrypt(&ciphertext, key) {
+                Ok(x) => x,
                 Err(err) => return eprintln!("failed to decrypt message: {err:?}"),
             };
-            let entropy_after = calculate_entropy(&plaintext_bytes);
             let plaintext = String::from_utf8_lossy(&plaintext_bytes).to_string();
             println!("decrypted message: {plaintext}");
-            println!("entropy before decryption: {entropy_before}");
-            println!("entropy after decryption: {entropy_after}");
+            print_entropy(&entropy);
         }
         cmd => panic!("unknown command: {cmd}"),
     }
@@ -58,4 +50,17 @@ fn expect_valid_key(arg: Option<String>) -> u64 {
         Ok(key) => key,
         Err(()) => panic!("found key regression: not every key byte contains odd number of bits"),
     }
+}
+
+fn print_entropy(entropy: &[Vec<f64>]) {
+    println!("entropy in blocks over iterations:");
+    entropy.iter().enumerate().for_each(|(i, entropy)| {
+        let n = i + 1;
+        let entropy = entropy
+            .iter()
+            .map(|entropy| format!("{entropy:.4}"))
+            .collect::<Vec<_>>();
+        let entropy = entropy.join(" > ");
+        println!("block {n}: {entropy}")
+    })
 }
